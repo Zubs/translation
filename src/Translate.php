@@ -38,15 +38,12 @@ class Translate
     {
         $response = Http::withHeaders($this->getHeaders())->get($this->getURL('languages'));
 
-        if (!$response->ok()) {
-            // TODO: Setup logs and write to it
+        $response = json_decode($response->body(), true);
+        $languages = $response['data']['languages'];
 
-            throw new Exception('Error getting language codes');
-        }
-
-        // TODO: Return only the language codes
-
-        return [$response->body()];
+        return array_map(function ($language) {
+            return $language['language'];
+        }, $languages);
     }
 
     /**
@@ -61,7 +58,7 @@ class Translate
 
         // TODO: Return only the language codes and names
 
-        return [];
+        return [$response->body()];
     }
 
     /**
