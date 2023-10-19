@@ -83,21 +83,23 @@ class Translate
      *
      * @param string $text Text to translate
      * @param string $to Language code to translate to
-     * @param string $from Language code to translate from, default is 'en'
+     * @param string|null $from Language code to translate from, if null will auto detect
      * @return string Translated text
      */
-    public function translate(string $text, string $to, string $from = 'en'): string
+    public function translate(string $text, string $to, string $from = null): string
     {
-        $response = Http::asForm()->withHeaders($this->getHeaders([
-            'content-type' => 'application/x-www-form-urlencoded'
-        ]))->post($this->getURL(), [
-            'form_params' => [
-                'q' => $text,
-                'target' => $to,
-                'source' => $from
-            ],
-        ]);
+        $body = [
+            'q' => $text,
+            'target' => $to
+        ];
 
-        return $response->body();
+        if (!is_null($from)) {
+            $body['source'] = $from;
+        }
+
+        $response = Http::asForm()->withHeaders($this->getHeaders())->post($this->getURL(), $body);
+        $response = json_decode($response->body(), true);
+
+        return $response['data']['translations'][0]['translatedText'];
     }
 }
