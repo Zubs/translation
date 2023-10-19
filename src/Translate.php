@@ -70,15 +70,12 @@ class Translate
      */
     public function detectLanguage(string $text): string
     {
-        $response = Http::withHeaders($this->getHeaders([
-            'content-type' => 'application/x-www-form-urlencoded'
-        ]))->post($this->getURL('detect'), [
-            'form_params' => [
-                'q' => $text
-            ],
+        $response = Http::asForm()->withHeaders($this->getHeaders())->post($this->getURL('detect'), [
+            'q' => $text
         ]);
+        $response = json_decode($response->body(), true);
 
-        return $response->body();
+        return $response['data']['detections'][0][0]['language'];
     }
 
     /**
@@ -91,7 +88,7 @@ class Translate
      */
     public function translate(string $text, string $to, string $from = 'en'): string
     {
-        $response = Http::withHeaders($this->getHeaders([
+        $response = Http::asForm()->withHeaders($this->getHeaders([
             'content-type' => 'application/x-www-form-urlencoded'
         ]))->post($this->getURL(), [
             'form_params' => [
