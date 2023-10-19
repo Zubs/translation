@@ -32,7 +32,6 @@ class Translate
      * Get all languages available as just the language code
      *
      * @return array List of language codes
-     * @throws Exception
      */
     public function getLanguageCodes(): array
     {
@@ -83,7 +82,7 @@ class Translate
      *
      * @param string $text Text to translate
      * @param string $to Language code to translate to
-     * @param string|null $from Language code to translate from, if null will auto detect
+     * @param string|null $from Language code to translate from, if null will auto-detect
      * @return string Translated text
      */
     public function translate(string $text, string $to, string $from = null): string
