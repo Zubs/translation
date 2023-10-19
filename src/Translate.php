@@ -96,7 +96,10 @@ class Translate
             $body['source'] = $from;
         }
 
-        $response = Http::asForm()->withHeaders($this->getHeaders())->post($this->getURL(), $body);
+        $response = Http::asForm()->withHeaders($this->getHeaders())->post(
+            $this->getURL(),
+            $body
+        );
         $response = json_decode($response->body(), true);
 
         return $response['data']['translations'][0]['translatedText'];
