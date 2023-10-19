@@ -3,8 +3,6 @@
 use Illuminate\Support\Facades\Route;
 use Zubs\Translator\Controllers\TranslationController;
 
-//Route::controller(TranslationController::class);
-
 Route::group([
     'prefix' => 'languages',
     'as' => 'languages.',
