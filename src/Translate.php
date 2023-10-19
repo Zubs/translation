@@ -37,7 +37,6 @@ class Translate
     public function getLanguageCodes(): array
     {
         $response = Http::withHeaders($this->getHeaders())->get($this->getURL('languages'));
-
         $response = json_decode($response->body(), true);
         $languages = $response['data']['languages'];
 
@@ -55,10 +54,12 @@ class Translate
     public function getLanguages(string $target = 'en'): array
     {
         $response = Http::withHeaders($this->getHeaders())->get($this->getURL('languages?target=' . $target));
+        $response = json_decode($response->body(), true);
+        $languages = $response['data']['languages'];
 
-        // TODO: Return only the language codes and names
-
-        return [$response->body()];
+        return array_map(function ($language) {
+            return [$language['language'] => $language['name']];
+        }, $languages);
     }
 
     /**
