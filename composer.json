@@ -8,7 +8,7 @@
     "license": "ISC",
     "autoload": {
         "psr-4": {
-            "Zubair\\Translator\\": "src/"
+            "Zubs\\Translator\\": "src/"
         }
     },
     "authors": [
