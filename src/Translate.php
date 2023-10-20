@@ -2,8 +2,8 @@
 
 namespace Zubs\Translator;
 
-use Exception;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Cache;
 
 class Translate
 {
@@ -13,6 +13,7 @@ class Translate
 		'X-RapidAPI-Key' => '5d30e801famshf83dd63f5d9a32bp110782jsnf912ec63bdee', // TODO: Move to .env
 		'X-RapidAPI-Host' => 'google-translate1.p.rapidapi.com'
     ];
+    private CONST DEFAULT_CACHE_TIME = 60 * 60 * 24;
 
     public function __construct()
     {
@@ -29,52 +30,68 @@ class Translate
     }
 
     /**
-     * Get all languages available as just the language code
+     * Get all languages available as just the language codes
+     *
+     * @param int $ttl Time to live in seconds - default 24hrs
      *
      * @return array List of language codes
      */
-    public function getLanguageCodes(): array
+    public function getLanguageCodes(int $ttl = self::DEFAULT_CACHE_TIME): array
     {
-        $response = Http::withHeaders($this->getHeaders())->get($this->getURL('languages'));
-        $response = json_decode($response->body(), true);
-        $languages = $response['data']['languages'];
+        return Cache::remember('translator:language_codes', $ttl, function () {
+            $response = Http::withHeaders($this->getHeaders())->get($this->getURL('languages'));
+            $response = json_decode($response->body(), true);
+            $languages = $response['data']['languages'];
 
-        return array_map(function ($language) {
-            return $language['language'];
-        }, $languages);
+            return array_map(function ($language) {
+                return $language['language'];
+            }, $languages);
+        });
     }
 
     /**
      * Get all languages available as an array of language code => language name
      *
-     * @param string $target Language code to translate the language names to, default is 'en'
+     * @param string $target Language code to translate the language names to - default 'en'
+     * @param int $ttl Time to live in seconds - default 24hrs
+     *
      * @return array List of language code => language name
      */
-    public function getLanguages(string $target = 'en'): array
+    public function getLanguages(string $target = 'en', int $ttl = self::DEFAULT_CACHE_TIME): array
     {
-        $response = Http::withHeaders($this->getHeaders())->get($this->getURL('languages?target=' . $target));
-        $response = json_decode($response->body(), true);
-        $languages = $response['data']['languages'];
+        $cacheKey = 'translator:languages:' . $target;
 
-        return array_map(function ($language) {
-            return [$language['language'] => $language['name']];
-        }, $languages);
+        return Cache::remember($cacheKey, $ttl, function () use ($target) {
+            $response = Http::withHeaders($this->getHeaders())->get($this->getURL('languages?target=' . $target));
+            $response = json_decode($response->body(), true);
+            $languages = $response['data']['languages'];
+
+            return array_map(function ($language) {
+                return [$language['language'] => $language['name']];
+            }, $languages);
+        });
     }
 
     /**
      * Detects what language a given string is written in
      *
      * @param string $text Text to detect language
+     * @param int $ttl Time to live in seconds - default 24hrs
+     *
      * @return string Language code
      */
-    public function detectLanguage(string $text): string
+    public function detectLanguage(string $text, int $ttl = self::DEFAULT_CACHE_TIME): string
     {
-        $response = Http::asForm()->withHeaders($this->getHeaders())->post($this->getURL('detect'), [
-            'q' => $text
-        ]);
-        $response = json_decode($response->body(), true);
+        $cacheKey = 'translator:detections:' . $text;
 
-        return $response['data']['detections'][0][0]['language'];
+        return Cache::remember($cacheKey, $ttl, function () use ($text) {
+            $response = Http::asForm()->withHeaders($this->getHeaders())->post($this->getURL('detect'), [
+                'q' => $text
+            ]);
+            $response = json_decode($response->body(), true);
+
+            return $response['data']['detections'][0][0]['language'];
+        });
     }
 
     /**
@@ -83,25 +100,37 @@ class Translate
      * @param string $text Text to translate
      * @param string $to Language code to translate to
      * @param string|null $from Language code to translate from, if null will auto-detect
+     * @param int $ttl Time to live in seconds - default 24hrs
+     *
      * @return string Translated text
      */
-    public function translate(string $text, string $to, string $from = null): string
+    public function translate
+    (
+        string $text,
+        string $to,
+        string $from = null,
+        int $ttl = self::DEFAULT_CACHE_TIME
+    ): string
     {
-        $body = [
-            'q' => $text,
-            'target' => $to
-        ];
+        $cacheKey = 'translator:translations:' . $text . ':to:' . $to . ':from:' . $from;
 
-        if (!is_null($from)) {
-            $body['source'] = $from;
-        }
+        return Cache::remember($cacheKey, 60 * 60 * 24, function () use ($text, $to, $from) {
+            $body = [
+                'q' => $text,
+                'target' => $to
+            ];
 
-        $response = Http::asForm()->withHeaders($this->getHeaders())->post(
-            $this->getURL(),
-            $body
-        );
-        $response = json_decode($response->body(), true);
+            if (!is_null($from)) {
+                $body['source'] = $from;
+            }
 
-        return $response['data']['translations'][0]['translatedText'];
+            $response = Http::asForm()->withHeaders($this->getHeaders())->post(
+                $this->getURL(),
+                $body
+            );
+            $response = json_decode($response->body(), true);
+
+            return $response['data']['translations'][0]['translatedText'];
+        });
     }
 }

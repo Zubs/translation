@@ -7,15 +7,7 @@ You can install this package via composer using this command:
 composer require zubs/translator
 ```
 
-Then, register the package service provider in your `config/app.php` file:
-```php
-'providers' => [
-    /*
-     * Package Service Providers...
-     */
-    Zubs\Translator\Providers\TranslatorProvider::class,
-];
-```
+Then, the service provider is automatically registered. 
 
 ## Usage
 
@@ -26,13 +18,16 @@ This package provides the `Zubs\Translator\Translate` and that provides the foll
 - [`detectLanguage()`](#detect-the-language-of-a-string-with-detectlanguage)
 - [`translate()`](#translate-a-string-with-translate)
 
+> All the methods cache results for better performances. The cache defaults to 24hrs but can be changed by passing an extra parameter to the methods.
+
 #### Get all available languages with `getLanguages()`
 This function definition looks like this:
 ```php
-getLanguages(string $target = 'en'): array
+public function getLanguages(string $target = 'en', int $ttl = self::DEFAULT_CACHE_TIME): array
 ```
 
 The `target` parameter is optional and defaults to `en`. This is the language that the returned array will be translated to.
+The `ttl` is used to set the time that the cache will be stored for. It defaults to 1 day.
 
 The function returns an array of all available languages in the format, `code => language`, like this:
 ```php
@@ -46,10 +41,10 @@ The function returns an array of all available languages in the format, `code =>
 #### Get the language codes of all available languages with `getLanguageCodes()`
 This function definition looks like this:
 ```php 
-getLanguageCodes(): array
+public function getLanguageCodes(int $ttl = self::DEFAULT_CACHE_TIME): array
 ```
 
-This function takes no parameter and returns the same array as the `getLanguages()` function, but without the language names. Like this:
+This function takes just one parameter, `ttl`, and returns the same array as the `getLanguages()` function, but without the language names. Like this:
 ```php
 [
     'en',
@@ -58,13 +53,17 @@ This function takes no parameter and returns the same array as the `getLanguages
 ]
 ```
 
+The `ttl` is used to set the time that the cache will be stored for. It defaults to 1 day.
+
 #### Detect the language of a string with `detectLanguage()`
 This function definition looks like this:
 ```php
-detectLanguage(string $text): string
+public function detectLanguage(string $text, int $ttl = self::DEFAULT_CACHE_TIME): string
 ```
 
-This function takes a mandatory string, `text` as a parameter and returns the language code of the language that the string is written in. Like this:
+This function takes a mandatory string, `text` as a parameter. It also takes an optional parameter, `ttl`.
+The `ttl` is used to set the time that the cache will be stored for. It defaults to 1 day.
+The function returns the language code of the language that the string is written in. Like this:
 ```php
 detectLanguage('Hello world!'); // returns 'en'
 ```
@@ -72,10 +71,22 @@ detectLanguage('Hello world!'); // returns 'en'
 #### Translate a string with `translate()`
 This function definition looks like this:
 ```php
-translate(string $text, string $to, string $from = null): string
+public function translate
+(
+    string $text,
+    string $to,
+    string $from = null,
+    int $ttl = self::DEFAULT_CACHE_TIME
+): string
 ```
 
-This function takes a mandatory string, `text`, as a parameter and returns the translated string. The `to` parameter is the language code of the language that the string should be translated to. The `from` parameter is the language code of the language that the string is written in. If the `from` parameter is not provided, the function will try to detect the language of the string. Like this:
+This function takes a mandatory string, `text`, as a parameter and returns the translated string. 
+The `to` parameter is the language code of the language that the string should be translated to. 
+The `from` parameter is the language code of the language that the string is written in. 
+If the `from` parameter is not provided, the function will try to detect the language of the string.
+The `ttl` is used to set the time that the cache will be stored for. It defaults to 1 day.
+
+The function can be used like this:
 ```php
 translate('Hello world!', 'fr'); // returns 'Bonjour le monde!'
 
