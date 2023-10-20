@@ -16,5 +16,12 @@
             "name": "Zubs",
             "email": "zubairidrisaweda@gmail.com"
         }
-    ]
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Zubs\\Translator\\Providers\\TranslatorProvider"
+            ]
+        }
+    }
 }
