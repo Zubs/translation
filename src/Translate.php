@@ -62,13 +62,21 @@ class Translate
         $cacheKey = 'translator:languages:' . $target;
 
         return Cache::remember($cacheKey, $ttl, function () use ($target) {
-            $response = Http::withHeaders($this->getHeaders())->get($this->getURL('languages?target=' . $target));
-            $response = json_decode($response->body(), true);
-            $languages = $response['data']['languages'];
+            $response = Http::withHeaders($this->getHeaders())->withQueryParameters([
+                'target' => $target
+            ])->get($this->getURL('languages'));
 
-            return array_map(function ($language) {
-                return [$language['language'] => $language['name']];
-            }, $languages);
+            if ($response->ok()) {
+                $response = json_decode($response->body(), true);
+                $languages = $response['data']['languages'];
+
+                return array_map(function ($language) {
+                    return [$language['language'] => $language['name']];
+                }, $languages);
+            }
+
+            // TODO: Throw exception
+            return [];
         });
     }
 
@@ -114,7 +122,7 @@ class Translate
     {
         $cacheKey = 'translator:translations:' . $text . ':to:' . $to . ':from:' . $from;
 
-        return Cache::remember($cacheKey, 60 * 60 * 24, function () use ($text, $to, $from) {
+        return Cache::remember($cacheKey, $ttl, function () use ($text, $to, $from) {
             $body = [
                 'q' => $text,
                 'target' => $to
